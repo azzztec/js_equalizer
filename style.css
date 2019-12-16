@@ -1,0 +1,22 @@
+html{
+    box-sizing: border-box;
+}
+
+*,:after,:before{
+    box-sizing: inherit;
+}
+
+.pads-field{
+    margin: 0 auto;
+    width: 70%;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.pad{
+    width: 50px;
+    height: 50px;
+    background-color: #000;
+    border: 1px solid #ffffff;
+}
