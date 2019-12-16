@@ -58,7 +58,7 @@ window.addEventListener('load', function(){
     var source = context.createMediaElementSource(audio),
         filters = createFilters();
 
-    // источник цепляем к первому фильтру 
+    // источник цепляется к первому фильтру 
     source.connect(filters[0]);
     // а последний фильтр - к выходу
     filters[filters.length - 1].connect(context.destination);
