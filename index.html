@@ -14,6 +14,11 @@
             box-sizing: inherit;
         }
 
+        body{
+            margin: 0;
+            padding: 0;
+        }
+
         .pads-field{
             margin: 0 auto;
             width: 70%;
@@ -25,87 +30,189 @@
         .pad{
             width: 50px;
             height: 50px;
-            background-color: #000;
+            background-color: rgb(244, 244, 244);
             border: 1px solid #ffffff;
+        }
+
+        .container{
+            width: 40%;
+            border-radius: 15px;
+            margin: 0 auto;
+            /* background-color: rgba(0, 0, 0, 0.2); */
+            background-color: rgba(0, 127, 255, 0.9);
+        }
+
+        .field-size{
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: 100px;
+            margin: 0 auto;
+            
+            border-radius: 15px;
+            padding: 10px;
+        }
+
+        .field-theme{
+            margin-left: 26px;
+        }
+
+        .modal_item{
+            display: block;
+            padding: 10px;
+            width: 100%;
+        }
+
+        .modal_item:nth-child(2){
+            margin-top: 25px;
+        }
+        
+        audio{
+            display: block;
+            width: 70%;
+            margin: 20px auto 0 auto;
         }
     </style>
 </head>
 <body>
     <div class="pads-field"></div>
-    <audio controls > 
-        <source src="nkoha.mp3"> 
-    </audio>
-
+    <div id="audio_box"></div>
+    <div class="container">
+        <div class="field-size">
+            <input class="field-size__columns" type="text" value="16">
+            <span>X</span>
+            <input class="field-size__rows" type="text" value="9">
+            <button>GO</button>
+        </div>
+        <div class="field-theme">
+            <h4>Choose Theme Color</h4>
+            <p><input name="color" type="radio" value="red" checked> Red</p>
+            <p><input name="color" type="radio" value="green"> Green</p>
+            <p><input name="color" type="radio" value="blue"> Blue</p>
+        </div>
+    </div>
+    
 
     <script>
-        let pad;
         let padField = document.querySelector('.pads-field');
+        let btn = document.querySelector('button');
+        let container = document.querySelector('.container');
+        let radioBtns = document.querySelectorAll('input[type=radio]');
+        let themeColor;
+        let pad;
         let columns = 16;
         let rows = 9;
-        let padsAmount = columns * rows;
+        let padsAmount;
+        let allPads = [];
 
-        function addSquare(){
+        btn.addEventListener('click', function(){
+            emptyField();
+            setFieldSize();
+            themeColor = checkThemeColor();
+        });
+
+        function checkThemeColor(){
+            for(let i = 0; i <= radioBtns.length; i++){
+                if(radioBtns[i].checked){
+                    return radioBtns[i].value;
+                }
+            }
+        }
+
+        function setFieldSize(){
+            columns = document.querySelector('.field-size__columns').value;
+            rows = document.querySelector('.field-size__rows').value;
+            padsAmount = columns * rows;
+            setPadInField(padsAmount);
+        }
+
+        function emptyField(){
+            allPads = [];
+            document.querySelector('.pads-field').innerHTML = '';
+        }
+
+        function addPad(){
             pad = document.createElement('div');
             pad.classList.add('pad');
-            setSquereSize();
+            allPads.push(pad);
+            setPadSize();
+            
             return pad;
         }
 
-        function setSquereSize(){
+        function setPadSize(){
             pad.style.flexBasis = (1 / columns) * 100 + '%';
         }
 
-        function setPad(padsAmount){
+        function setPadInField(padsAmount){
             while(padsAmount != 0){
-                padField.append( addSquare() );
+                padField.append( addPad() );
                 --padsAmount;
             }
         }
 
-        setPad(padsAmount);
 
+        let audio = new Audio();
+            audio.src = 'nkoha.mp3';
+            audio.controls = true;
+            audio.loop = true;
+            audio.autoplay = false;
 
-        window.addEventListener('load', function(){
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        let source, 
+            context, 
+            analyser, 
+            data_array, 
+            bufferLength;   
 
-            var context = new AudioContext(),
-            audio = document.querySelector('audio');
+        function audioInfo(){
+            document.getElementById('audio_box').appendChild(audio);
+            context = new AudioContext(); // AudioContext object instance
+            analyser = context.createAnalyser(); // AnalyserNode method
+            analyser.fftSize = 512;
+            canvas = document.getElementById('analyser_render');
+            // Re-route audio playback into the processing graph of the AudioContext
+            source = context.createMediaElementSource(audio); 
+            source.connect(analyser);
+            analyser.connect(context.destination);
+            setPadsColor();
+            
+        }
+            // frameLooper() animates any style of graphics you wish to the audio frequency
+            // Looping at the default frame rate that the browser provides(approx. 60 FPS)
+        function setPadsColor(){
+            requestAnimationFrame(setPadsColor);
+            bufferLength = analyser.frequencyBinCount;
+            data_array = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(data_array);
 
-            var createFilter = function (frequency) {
-            var filter = context.createBiquadFilter();
+            
+
+            // Color if the pads
+            for (let i = 0; i < padsAmount; i++) {
+                if(checkThemeColor() == 'red'){
+                    var r = data_array[i] + (25 * (i/bufferLength));
+                    var g = 1;
+                    var b = 25 * (i/bufferLength);
+                }
+
+                if(checkThemeColor() == 'blue'){
+                    var r = 25 * (i/bufferLength);
+                    var g = 1;
+                    var b = data_array[i] + (25 * (i/bufferLength));
+                }
+
+                if(checkThemeColor() == 'green'){
+                    var r = 25 * (i/bufferLength);
+                    var g = data_array[i] + (25 * (i/bufferLength));
+                    var b = 1;
+                }
                 
-            filter.type = 'peaking'; // тип фильтра
-            filter.frequency.value = frequency; // частота
-            filter.Q.value = 1; // Q-factor
-            filter.gain.value = 0;
 
-            return filter;
-            };
+                allPads[i].style.background = `radial-gradient(rgb(${r}, ${g}, ${b}), rgb(${r/2}, ${g/2}, ${b/2}))`;
+            }
+        }
 
-            var createFilters = function () {
-            var frequencies = [60, 170, 310, 600, 1000, 3000, 6000, 12000, 14000, 16000],
-                filters = frequencies.map(createFilter);
-
-            filters.reduce(function (prev, curr) {
-                prev.connect(curr);
-                return curr;
-            });
-
-            return filters;
-            };
-
-            var equalize = function (audio) {
-            var source = context.createMediaElementSource(audio),
-                filters = createFilters();
-
-            // источник цепляем к первому фильтру 
-            source.connect(filters[0]);
-            // а последний фильтр - к выходу
-            filters[filters.length - 1].connect(context.destination);
-            };
-
-            equalize(audio);
-        });
+        audioInfo();
 
     </script>
 </body>
